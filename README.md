@@ -37,6 +37,11 @@ browser = webdriver.Firefox(firefox_profile = profile)
 4. 頁面還沒跑完就執行下一步: 我很粗略地只要換頁面就強迫等待3秒才繼續做事 (會受網速影響)
     * 錯誤訊息像是 `is not clickable at point (x,y)`
     * 或是還沒進到新頁面就已經開始爬，這樣會爬不到，頁面跳轉也會出問題
+5. 注意 Locating Elements 的名字有沒有加 s: 底下一個有加一個沒加，其中有加的那個會返回 list()
+```python=
+college = panel.find_element_by_class_name('panel-heading')
+departs = panel.find_elements_by_class_name('btn_dept')
+```
 
 ### 參考資料(紀錄幾個不錯的網站，但不見得有用到)
 [BeautifulSoup](https://blog.gtwang.org/programming/python-beautiful-soup-module-scrape-web-pages-tutorial/)
