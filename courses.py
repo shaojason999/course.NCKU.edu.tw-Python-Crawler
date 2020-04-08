@@ -1,9 +1,13 @@
 from selenium import webdriver
 import csv
+import time
 
 f_csv = open('ncku_course.csv','w')
 writer = csv.writer(f_csv)
-f = open('ncku_course_data','w')
+#f = open('ncku_course_data','w')
+
+course_list_name = ['系所名稱','系號-序號','年級','類別','科目名稱','學分選必修','教師姓名','已選課人數/餘額','時間/教室','課程大綱']
+writer.writerow(course_list_name)
 
 profile = webdriver.FirefoxProfile()
 profile.set_preference('intl.accept_languages', 'zh-CN')    # query chinese page
@@ -16,11 +20,13 @@ depart_list = []
 for depart in departs:
     depart_list.append(depart.text)
 
-#for i in range(int(len(depart_list)/2)):
-for i in range(3):
+for i in range(int(len(depart_list)/2)):
+#for i in range(3):
+    time.sleep(3)   # wait for 5 seconds
     depart = browser.find_elements_by_xpath("//*[contains(text(), '%s')]" % depart_list[i])
     depart_name = depart[0].text
     depart[0].click()
+    time.sleep(3)   # wait for 5 seconds
     courses_elements = browser.find_elements_by_xpath("//table[@id = 'A9-table']/tbody/tr/td")
 
     course_list = [depart_name]
@@ -31,7 +37,14 @@ for i in range(3):
             continue
         elif (i%10 == 9):   # the last one is href, it need to be drawed out by css_selector and then use get_attribute
             href = element.find_elements_by_css_selector('a')
-            course_list.append(href[0].get_attribute('href'))  
+            if (len(href) == 0):    # no href exits
+                course_list.append([])
+            else:
+                url = href[0].get_attribute('href')
+                if (url[0] != 'h'):    # not a url
+                    course_list.append([])
+                else:
+                    course_list.append(url)
         else:   # we don't need the text of the last one (when i%10 == 9)
             course_list.append(element.text.split())
         if (i%10 == 9):    # last one
