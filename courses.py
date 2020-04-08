@@ -4,9 +4,8 @@ import time
 
 f_csv = open('ncku_course.csv','w')
 writer = csv.writer(f_csv)
-#f = open('ncku_course_data','w')
 
-course_list_name = ['系所名稱','系號-序號','年級','類別','科目名稱','學分選必修','教師姓名','已選課人數/餘額','時間/教室','課程大綱']
+course_list_name = ['學院','系所名稱','系號-序號','年級','類別','科目名稱','學分選必修','教師姓名','已選課人數/餘額','時間/教室','課程大綱']
 writer.writerow(course_list_name)
 
 profile = webdriver.FirefoxProfile()
@@ -15,65 +14,55 @@ browser = webdriver.Firefox(firefox_profile = profile)
 
 browser.get('https://course.ncku.edu.tw/index.php?c=qry_all') 
 
-departs = browser.find_elements_by_xpath("//*[@class='btn_dept']") # have to type in the complete class=' '
+college_list = []
 depart_list = []
-for depart in departs:
-    depart_list.append(depart.text)
+panels = browser.find_elements_by_class_name('panel-default')
+panels = panels[:int(len(panels)/2)]  # cut in half
 
-for i in range(int(len(depart_list)/2)):
-#for i in range(3):
+for panel in panels:
+    college = panel.find_element_by_class_name('panel-heading')
+    departs = panel.find_elements_by_class_name('btn_dept')
+    college_list.extend([college.text]*len(departs))
+    for depart in departs:
+        depart_list.append(depart.text)
+
+for i in range(len(depart_list)):
     time.sleep(3)   # wait for 5 seconds
-    depart = browser.find_elements_by_xpath("//*[contains(text(), '%s')]" % depart_list[i])
-    depart_name = depart[0].text
-    depart[0].click()
+    college_name = college_list[i]
+    depart = browser.find_elements_by_xpath("//*[contains(text(), '%s')]" % depart_list[i])[0]  # use the first one
+    depart_name = depart.text
+    course_list = [college_name,depart_name]
+
+    depart.click()
     time.sleep(3)   # wait for 5 seconds
     courses_elements = browser.find_elements_by_xpath("//table[@id = 'A9-table']/tbody/tr/td")
 
-    course_list = [depart_name]
-
-    """ used for write csv (start)"""
     for i,element in enumerate(courses_elements):
         if (i%10 == 0): # discard first one
             continue
         elif (i%10 == 9):   # the last one is href, it need to be drawed out by css_selector and then use get_attribute
             href = element.find_elements_by_css_selector('a')
             if (len(href) == 0):    # no href exits
-                course_list.append([])
+                course_list.append('')
             else:
                 url = href[0].get_attribute('href')
                 if (url[0] != 'h'):    # not a url
-                    course_list.append([])
+                    course_list.append('')
                 else:
                     course_list.append(url)
-        else:   # we don't need the text of the last one (when i%10 == 9)
-            course_list.append(element.text.split())
-        if (i%10 == 9):    # last one
-            writer.writerow(course_list)
-            course_list = [depart_name]
-    """ used for write csv (end) """
 
-    """ used for write txt file
-    for i,element in enumerate(courses_elements):
-        if (i%10 == 0): # discard first one
-            continue
-        elif (i%10 == 9):   # the last one is href, it need to be drawed out by css_selector and then use get_attribute
-            href = element.find_elements_by_css_selector('a')
-            href = [href[0].get_attribute('href')] # convert from string to list, because .extend() accept list
-            course_list.extend(href)
+            # output                    
+            writer.writerow(course_list)
+            course_list = [college_name,depart_name]
         else:   # we don't need the text of the last one (when i%10 == 9)
-            course_list.extend(element.text.split())
-        if (i%10 == 9):    # last one
-            for j,item in enumerate(course_list):
-                if (j == len(course_list)-1):
-                    f.write(item + '\n')
-                    break 
-                else:
-                    f.write(item + ',')
-            course_list = [depart_name]
-    """
+            split_list = element.text.split()
+            if (len(split_list) == 0):
+                course_list.append('')
+            else:
+                course_list.append(split_list)
+
     browser.back()
 
 f_csv.close()
-# f.close()
 browser.quit()
 
